@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 
 const GAME_WIDTH = canvas.width;
 const GAME_HEIGHT = canvas.height;
+const PLAYER_MARGIN_BOTTOM = 30;
 
 const keys = {
   left: false,
@@ -12,9 +13,30 @@ const keys = {
   shoot: false,
 };
 
+const CONTROLLED_KEYS = [
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+  'Space',
+  'KeyA',
+  'KeyD',
+  'KeyW',
+  'KeyS',
+];
+
+function getInitialPlayerPosition() {
+  return {
+    x: GAME_WIDTH / 2 - 20,
+    y: GAME_HEIGHT - 40 - PLAYER_MARGIN_BOTTOM,
+  };
+}
+
+const initialPlayerPosition = getInitialPlayerPosition();
+
 const player = {
-  x: GAME_WIDTH / 2 - 20,
-  y: GAME_HEIGHT - 70,
+  x: initialPlayerPosition.x,
+  y: initialPlayerPosition.y,
   width: 40,
   height: 40,
   speed: 240,
@@ -37,12 +59,14 @@ function update(deltaTime) {
     return;
   }
 
-  const distance = player.speed * deltaTime;
+  const movement = {
+    x: Number(keys.right) - Number(keys.left),
+    y: Number(keys.down) - Number(keys.up),
+  };
+  const movementLength = Math.hypot(movement.x, movement.y) || 1;
 
-  if (keys.left) player.x -= distance;
-  if (keys.right) player.x += distance;
-  if (keys.up) player.y -= distance;
-  if (keys.down) player.y += distance;
+  player.x += (movement.x / movementLength) * player.speed * deltaTime;
+  player.y += (movement.y / movementLength) * player.speed * deltaTime;
 
   player.x = Math.max(0, Math.min(GAME_WIDTH - player.width, player.x));
   player.y = Math.max(0, Math.min(GAME_HEIGHT - player.height, player.y));
@@ -122,8 +146,10 @@ function checkCollisions() {
 }
 
 function resetGame() {
-  player.x = GAME_WIDTH / 2 - player.width / 2;
-  player.y = GAME_HEIGHT - 70;
+  const initialPosition = getInitialPlayerPosition();
+
+  player.x = initialPosition.x;
+  player.y = initialPosition.y;
   bullets.length = 0;
   enemies.length = 0;
   gameState.running = true;
@@ -192,7 +218,7 @@ function isOverlapping(a, b) {
 }
 
 function gameLoop(timestamp) {
-  const deltaTime = (timestamp - gameState.lastTime) / 1000 || 0;
+  const deltaTime = Math.min((timestamp - gameState.lastTime) / 1000 || 0, 0.1);
   gameState.lastTime = timestamp;
 
   update(deltaTime);
@@ -210,6 +236,10 @@ function setKeyState(code, pressed) {
 }
 
 window.addEventListener('keydown', (event) => {
+  if (CONTROLLED_KEYS.includes(event.code)) {
+    event.preventDefault();
+  }
+
   if (event.code === 'KeyR') {
     resetGame();
     return;
@@ -219,6 +249,10 @@ window.addEventListener('keydown', (event) => {
 });
 
 window.addEventListener('keyup', (event) => {
+  if (CONTROLLED_KEYS.includes(event.code)) {
+    event.preventDefault();
+  }
+
   setKeyState(event.code, false);
 });
 
