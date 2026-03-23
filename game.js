@@ -41,6 +41,8 @@ const player = {
   height: 40,
   speed: 240,
   color: '#7dd3fc',
+  fireInterval: 0.25,
+  fireCooldown: 0,
 };
 
 const bullets = [];
@@ -50,7 +52,6 @@ const gameState = {
   running: true,
   score: 0,
   lastTime: 0,
-  shootCooldown: 0,
   enemySpawnTimer: 0,
 };
 
@@ -71,7 +72,7 @@ function update(deltaTime) {
   player.x = Math.max(0, Math.min(GAME_WIDTH - player.width, player.x));
   player.y = Math.max(0, Math.min(GAME_HEIGHT - player.height, player.y));
 
-  gameState.shootCooldown = Math.max(0, gameState.shootCooldown - deltaTime);
+  player.fireCooldown = Math.max(0, player.fireCooldown - deltaTime);
   gameState.enemySpawnTimer += deltaTime;
 
   if (keys.shoot) {
@@ -105,20 +106,23 @@ function render() {
 }
 
 function shoot() {
-  if (gameState.shootCooldown > 0) {
+  if (player.fireCooldown > 0) {
     return;
   }
 
-  bullets.push({
+  bullets.push(createBullet());
+  player.fireCooldown = player.fireInterval;
+}
+
+function createBullet() {
+  return {
     x: player.x + player.width / 2 - 3,
     y: player.y - 12,
     width: 6,
     height: 12,
     speed: 360,
     color: '#fef08a',
-  });
-
-  gameState.shootCooldown = 0.25;
+  };
 }
 
 function spawnEnemy() {
@@ -155,7 +159,7 @@ function resetGame() {
   gameState.running = true;
   gameState.score = 0;
   gameState.lastTime = 0;
-  gameState.shootCooldown = 0;
+  player.fireCooldown = 0;
   gameState.enemySpawnTimer = 0;
 }
 
